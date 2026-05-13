@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CSE Auto-Invest Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="Style.css"/>
+<link rel="icon" href="data:,">
+</head>
+<body>
+
+<!-- TICKER TAPE -->
+<div class="ticker-tape">
+  <div class="tape-inner" id="tapeInner">
+    <div class="tape-item"><span class="tape-ticker">CSE</span><span class="tape-price">Loading…</span></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">AI</div>
+    <div>
+      <span>CSE Auto-Invest</span>
+      <span class="logo-sub">Signal Engine + Auto Portfolio v5.0</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="clock" id="clockDisplay">--:--:--</span>
+    <span class="last-update" id="last-update">—</span>
+    <div class="market-status-wrap">
+      <div class="market-pill pill-closed" id="marketStatusPill">--</div>
+      <div class="market-status-sub" id="marketStatusSub">Checking…</div>
+    </div>
+    <div class="live-pill"><span class="live-dot"></span> LIVE</div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshCurrent()">↻ REFRESH</button>
+  </div>
+</header>
+
+<!-- APP -->
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav>
+    <div class="budget-box">
+      <div class="bl">AUTO CASH (real)</div>
+      <div class="bv" id="sbAutoCash">LKR 100,000</div>
+      <div class="bs" id="sbCashStatus">Available for auto trades</div>
+
+      <div class="budget-input-row" style="margin-top: 12px;">
+        <div style="display: flex; justify-content: space-between; width: 100%; font-size: 11px;">
+          <span style="color: var(--text2);">Budget ref:</span>
+          <span style="font-family: var(--mono);" id="sbBudgetRef">100,000</span>
+        </div>
+      </div>
+
+      <div class="budget-input-row">
+        <input type="number" id="budgetInput" placeholder="Set budget ref" min="100" step="1000"/>
+        <button onclick="updateBudget()">SET REF</button>
+      </div>
+      <div class="budget-input-row">
+        <button onclick="syncAutoCashToBudget()" style="background: var(--surface3); color: var(--text); border: 1px solid var(--border2);">⟳ Sync Cash to Ref</button>
+      </div>
+    </div>
+    
+
+    <div class="nav-section">
+      <div class="nav-label">Market Data</div>
+      <div class="nav-item active" onclick="showPage('summary',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="8" width="3" height="6" rx="0.5"/><rect x="6" y="5" width="3" height="9" rx="0.5"/><rect x="11" y="2" width="3" height="12" rx="0.5"/></svg>
+        Market Summary
+      </div>
+      <div class="nav-item" onclick="showPage('movers',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="1,11 5,6 9,8 14,3"/><polyline points="11,3 14,3 14,6"/></svg>
+        Gainers &amp; Losers
+      </div>
+      <div class="nav-item" onclick="showPage('lookup',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10" y1="10" x2="14" y2="14"/></svg>
+        Stock Lookup
+      </div>
+      <div class="nav-item" onclick="showPage('announcements',this)">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1a5 5 0 015 5c0 3-1 4-1 5H4c0-1-1-2-1-5a5 5 0 015-5z"/><path d="M6.5 13a1.5 1.5 0 003 0"/></svg>
+        Announcements
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Signal Engine</div>
+      <div class="nav-item" onclick="showPage('scan',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        Scan All Listed
+      </div>
+      <div class="nav-item" onclick="showPage('auto',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Auto-Invest Engine
+      </div>
+      <div class="nav-item" onclick="showPage('portfolio',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        My Portfolio
+      </div>
+      <div class="nav-item" onclick="showPage('pnl',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        P&amp;L Report
+      </div>
+      <div class="nav-item" onclick="showPage('log',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Trade Log
+      </div>
+      <div class="nav-item" onclick="showPage('settings',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Quick Stats</div>
+      <div style="padding:0 20px;display:flex;flex-direction:column;gap:9px;">
+        <div class="qs-row"><span class="qs-label">BUY signals</span><span class="up" style="font-family:var(--mono)" id="sbBuyCount">0</span></div>
+        <div class="qs-row"><span class="qs-label">SELL signals</span><span style="color:var(--red);font-family:var(--mono)" id="sbSellCount">0</span></div>
+        <div class="qs-row"><span class="qs-label">Auto-positions</span><span style="color:var(--amber);font-family:var(--mono)" id="sbAutoCount">0</span></div>
+        <div class="qs-row"><span class="qs-label">Scanned</span><span style="color:var(--text2);font-family:var(--mono);font-size:11px" id="sbScanned">—</span></div>
+        <div class="qs-row"><span class="qs-label">Last scan</span><span style="color:var(--text2);font-family:var(--mono);font-size:11px" id="sbLastRefresh">—</span></div>
+        <div class="qs-row"><span class="qs-label">Portfolio</span><span class="bs" id="sbReturn">Ready to invest</span></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ===== MARKET SUMMARY ===== -->
+    <div class="page active" id="page-summary">
+      <div class="section-header"><span class="section-title">Daily Market Overview</span><div class="section-line"></div></div>
+      <div class="error-banner" id="summary-err"></div>
+      <div class="metric-grid">
+        <div class="metric-cell"><div class="metric-label">ASPI</div><div class="metric-value" id="m-aspi">—</div><div class="metric-sub neutral" id="m-aspi-ch">—</div></div>
+        <div class="metric-cell"><div class="metric-label">S&amp;P SL20</div><div class="metric-value" id="m-sl20">—</div><div class="metric-sub neutral" id="m-sl20-ch">—</div></div>
+        <div class="metric-cell"><div class="metric-label">Turnover (LKR)</div><div class="metric-value" id="m-turn">—</div></div>
+        <div class="metric-cell"><div class="metric-label">Volume</div><div class="metric-value" id="m-vol">—</div></div>
+        <div class="metric-cell"><div class="metric-label">Trades</div><div class="metric-value" id="m-trades">—</div></div>
+        <div class="metric-cell"><div class="metric-label">Domestic</div><div class="metric-value" id="m-adv">—</div></div>
+        <div class="metric-cell"><div class="metric-label">Foreign</div><div class="metric-value" id="m-dec">—</div></div>
+        <div class="metric-cell"><div class="metric-label">Companies Traded</div><div class="metric-value" id="m-unc">—</div></div>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header"><span class="loader" id="active-loader"></span>Most Active by Volume</div>
+        <table><thead><tr><th>Symbol</th><th>Last Price (LKR)</th><th>Change %</th><th>Volume</th><th>Turnover</th></tr></thead>
+        <tbody id="active-body"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- ===== GAINERS & LOSERS ===== -->
+    <div class="page" id="page-movers">
+      <div class="section-header"><span class="section-title">Gainers &amp; Losers</span><div class="section-line"></div></div>
+      <div class="error-banner" id="movers-err"></div>
+      <div class="movers-grid">
+        <div class="table-card">
+          <div class="table-card-header"><span class="gainers-label">▲ Top Gainers</span></div>
+          <table><thead><tr><th>Symbol</th><th>Price</th><th>Change %</th></tr></thead>
+          <tbody id="gainers-body"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody></table>
+        </div>
+        <div class="table-card">
+          <div class="table-card-header"><span class="losers-label">▼ Top Losers</span></div>
+          <table><thead><tr><th>Symbol</th><th>Price</th><th>Change %</th></tr></thead>
+          <tbody id="losers-body"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STOCK LOOKUP ===== -->
+    <div class="page" id="page-lookup">
+      <div class="section-header"><span class="section-title">Stock Lookup</span><div class="section-line"></div></div>
+      <div class="error-banner" id="lookup-err"></div>
+      <div class="search-bar">
+        <div class="ac-wrap">
+          <input id="sym-input" type="text" placeholder="e.g. JKH or JKH.N0000" onkeydown="if(event.key==='Enter')lookupStock()"/>
+          <ul class="ac-list" id="sym-suggestions"></ul>
+        </div>
+        <button onclick="lookupStock()">LOOK UP</button>
+      </div>
+      <div class="result-card" id="result-card" style="display:none">
+        <div class="result-header">
+          <div><div class="result-sym" id="r-sym">—</div><div class="result-name" id="r-name">—</div></div>
+          <div style="text-align:right"><div class="result-price" id="r-price">—</div><div class="result-change" id="r-change">—</div></div>
+        </div>
+        <div class="result-fields">
+          <div class="result-field"><div class="field-label">Open</div><div class="field-value" id="r-open">—</div></div>
+          <div class="result-field"><div class="field-label">High</div><div class="field-value" id="r-high">—</div></div>
+          <div class="result-field"><div class="field-label">Low</div><div class="field-value" id="r-low">—</div></div>
+          <div class="result-field"><div class="field-label">Volume</div><div class="field-value" id="r-vol">—</div></div>
+          <div class="result-field"><div class="field-label">Market Cap</div><div class="field-value" id="r-mcap">—</div></div>
+          <div class="result-field"><div class="field-label">52W High</div><div class="field-value" id="r-52h">—</div></div>
+          <div class="result-field"><div class="field-label">52W Low</div><div class="field-value" id="r-52l">—</div></div>
+          <div class="result-field"><div class="field-label">Prev Close</div><div class="field-value" id="r-pe">—</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ANNOUNCEMENTS ===== -->
+    <div class="page" id="page-announcements">
+      <div class="section-header"><span class="section-title">Announcements</span><div class="section-line"></div></div>
+      <div class="error-banner" id="ann-err"></div>
+      <div id="ann-body"><div class="empty"><span class="loader" id="ann-loader"></span> Loading…</div></div>
+    </div>
+
+    <!-- ===== SCAN ALL ===== -->
+    <div class="page" id="page-scan">
+      <div class="section-header">
+        <span class="section-title">Market Scanner — All Companies</span>
+        <div class="section-line"></div>
+      </div>
+      <div class="scan-hero">
+        <div class="scan-info">
+          <div class="scan-info-text">Scans all <strong>listed companies</strong>. Ranks by RSI, MA crossover, and volume spike. BUY signals can be auto-invested from the <strong>Auto-Invest Engine</strong>.</div>
+        </div>
+        <button class="btn primary" id="scanBtn" onclick="runScan()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Scan Now
+        </button>
+        <button class="btn" onclick="exportScanCSV()">Export CSV</button>
+      </div>
+      <div class="scan-progress-wrap" id="scanProgressWrap" style="display:none">
+        <div class="scan-progress-bar-bg"><div class="scan-progress-bar" id="scanProgressBar" style="width:0%"></div></div>
+        <div class="scan-progress-label" id="scanProgressLabel">Starting…</div>
+      </div>
+      <div class="scan-filter-bar" id="scanFilterBar" style="display:none">
+        <div class="scan-counts">
+          <span class="scan-count-item">Total: <strong id="scan-total-count">0</strong></span>
+          <span class="scan-count-item up">BUY: <strong id="scan-buy-count">0</strong></span>
+          <span class="scan-count-item dn">SELL: <strong id="scan-sell-count">0</strong></span>
+          <span class="scan-count-item" style="color:var(--blue)">WATCH: <strong id="scan-watch-count">0</strong></span>
+        </div>
+        <div class="filter-pills">
+          <span class="filter-pill active" onclick="filterScan('ALL',this)">All</span>
+          <span class="filter-pill" onclick="filterScan('BUY',this)">BUY</span>
+          <span class="filter-pill" onclick="filterScan('SELL',this)">SELL</span>
+          <span class="filter-pill" onclick="filterScan('WATCH',this)">WATCH</span>
+        </div>
+        <div class="scan-note" id="scanNote"></div>
+      </div>
+      <div id="scanResults"></div>
+    </div>
+
+    <!-- ===== AUTO-INVEST ENGINE ===== -->
+    <div class="page" id="page-auto">
+      <div class="section-header">
+        <span class="section-title">Auto-Invest Engine</span>
+        <div class="section-line"></div>
+      </div>
+
+      <!-- Engine Controls -->
+      <div class="auto-controls-card">
+        <div class="auto-controls-row">
+          <div class="auto-control-group">
+            <div class="auto-control-label">Engine Status</div>
+            <button class="auto-toggle-btn" id="autoEngineBtn" onclick="toggleAutoEngine()">
+              <span id="autoEngineBtnLabel">▶ Start Auto-Invest</span>
+            </button>
+          </div>
+          <div class="auto-control-group">
+            <div class="auto-control-label">Per-Trade Budget</div>
+            <div class="auto-control-input-row">
+              <input type="number" id="autoTradeSize" value="10000" min="1000" step="1000" placeholder="LKR per trade"/>
+              <span class="auto-control-unit">LKR</span>
+            </div>
+          </div>
+          <div class="auto-control-group">
+            <div class="auto-control-label">Profit Target</div>
+            <div class="auto-control-input-row">
+              <input type="number" id="autoTargetPct" value="7" min="1" max="30" step="0.5"/>
+              <span class="auto-control-unit">%</span>
+            </div>
+          </div>
+          <div class="auto-control-group">
+            <div class="auto-control-label">Stop Loss</div>
+            <div class="auto-control-input-row">
+              <input type="number" id="autoStopPct" value="3" min="1" max="15" step="0.5"/>
+              <span class="auto-control-unit">%</span>
+            </div>
+          </div>
+          <div class="auto-control-group">
+            <div class="auto-control-label">Min Signal Score</div>
+            <div class="auto-control-input-row">
+              <input type="number" id="autoMinScore" value="3" min="1" max="5" step="1"/>
+              <span class="auto-control-unit">/ 5</span>
+            </div>
+          </div>
+          <div class="auto-control-group">
+            <div class="auto-control-label">Max Positions</div>
+            <div class="auto-control-input-row">
+              <input type="number" id="autoMaxPos" value="5" min="1" max="20" step="1"/>
+              <span class="auto-control-unit">slots</span>
+            </div>
+          </div>
+        </div>
+        <div class="auto-status-bar">
+          <div class="auto-status-dot" id="autoStatusDot"></div>
+          <span id="autoStatusMsg">Engine off — press Start to begin scanning &amp; auto-trading</span>
+        </div>
+      </div>
+
+      <!-- Auto Portfolio Metrics -->
+      <div class="metric-grid" id="autoMetrics" style="margin-bottom:20px"></div>
+
+      <!-- Open Auto Positions -->
+      <div class="table-card" style="margin-bottom:20px">
+        <div class="table-card-header">
+          Open Auto Positions
+          <button class="btn" style="float:right;padding:4px 12px;font-size:11px" onclick="checkAutoSells()">↻ Check Exit Signals</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Symbol</th><th>Name</th><th>Shares</th><th>Buy Price</th>
+            <th>Live Price</th><th>Invested</th><th>Value</th>
+            <th>Gross P&amp;L</th><th>Net P&amp;L</th><th>Return</th>
+            <th>Target</th><th>Stop</th><th>Signal</th><th>Action</th>
+          </tr></thead>
+          <tbody id="autoPortfolioBody">
+            <tr><td colspan="14" class="empty">No auto positions yet. Start the engine to begin.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Allocation donut -->
+      <div class="chart-card" id="autoAllocCard" style="display:none">
+        <div class="chart-header"><div class="section-title">Capital Allocation</div></div>
+        <div class="alloc-section">
+          <canvas id="autoAllocChart" width="180" height="180"></canvas>
+          <div class="alloc-legend" id="autoAllocLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MY PORTFOLIO (manual) ===== -->
+    <div class="page" id="page-portfolio">
+      <div class="section-header"><span class="section-title">My Portfolio</span><div class="section-line"></div></div>
+      <div class="portfolio-actions">
+        <button class="btn primary" onclick="openAddPosition()">+ Add Position</button>
+        <button class="btn" onclick="refreshPortfolio()">↻ Refresh Prices</button>
+        <button class="btn" onclick="exportPortfolioCSV()">Export CSV</button>
+      </div>
+      <div class="metric-grid" id="portfolioMetrics" style="margin-bottom:20px"></div>
+      <div id="portfolioEmpty" class="empty-state" style="display:none">
+        <div style="font-size:32px;margin-bottom:12px">📂</div>
+        <div style="font-size:14px;color:var(--text2)">No positions yet. Use <strong>Scan All 298</strong> to find opportunities, then add them here. Or let the <strong>Auto-Invest Engine</strong> do it for you.</div>
+      </div>
+      <div class="table-card" id="portfolioTableWrap" style="display:none">
+        <div class="table-card-header">Open Positions</div>
+        <table>
+          <thead><tr><th>Symbol</th><th>Company</th><th>Shares</th><th>Buy Price</th><th>Live Price</th><th>Invested</th><th>Value</th><th>P&amp;L</th><th>Return</th><th>Signal</th><th>Action</th></tr></thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+      </div>
+      <div class="chart-card" id="portfolioChartCard" style="display:none">
+        <div class="chart-header"><div class="section-title">Portfolio Allocation</div></div>
+        <div class="alloc-section">
+          <canvas id="allocChart" width="180" height="180"></canvas>
+          <div class="alloc-legend" id="allocLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== P&L REPORT ===== -->
+    <div class="page" id="page-pnl">
+      <div class="section-header"><span class="section-title">P&amp;L Report — Combined</span><div class="section-line"></div></div>
+      <div class="metric-grid" id="pnlMetrics" style="margin-bottom:20px"></div>
+      <div class="table-card" style="margin-bottom:20px">
+        <div class="table-card-header">Open Positions (Auto + Manual)</div>
+        <table>
+          <thead><tr><th>Stock</th><th>Source</th><th>Shares</th><th>Buy Price</th><th>Live Price</th><th>Invested</th><th>Value</th><th>P&amp;L</th><th>Net P&amp;L</th><th>Signal</th></tr></thead>
+          <tbody id="pnlTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== TRADE LOG ===== -->
+    <div class="page" id="page-log">
+      <div class="section-header">
+        <span class="section-title">Trade Log</span>
+        <div class="section-line"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button class="btn" onclick="exportTradeLogCSV()">Export CSV</button>
+        <button class="btn" style="color:var(--red);border-color:rgba(240,79,79,0.3)" onclick="clearTradeLog()">Clear Log</button>
+      </div>
+      <div class="table-card">
+        <div class="table-card-header">All Executed Trades</div>
+        <table>
+          <thead><tr><th>Time</th><th>Symbol</th><th>Action</th><th>Shares</th><th>Price</th><th>Value</th><th>Reason</th><th>Net P&amp;L</th></tr></thead>
+          <tbody id="tradeLogBody"><tr><td colspan="8" class="empty">No trades yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="page" id="page-settings">
+      <div class="section-header"><span class="section-title">Settings</span><div class="section-line"></div></div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>Budget</h3>
+          <div class="settings-row">
+            <label>Total Budget (LKR)</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="number" id="settingBudget" style="width:130px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;" value="100000">
+              <button class="btn primary" style="padding:6px 12px;font-size:12px" onclick="applySettings()">Apply</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <label>Auto-refresh interval</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" min="10" max="120" value="60" id="refreshInterval" oninput="document.getElementById('refreshV').textContent=this.value+'s';setRefreshInterval(this.value)">
+              <span class="sv" id="refreshV">60s</span>
+            </div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>Scanner Filters</h3>
+          <div class="settings-row"><label>Show BUY signals</label><button class="toggle on" id="tog-buy" onclick="toggleSetting(this)"></button></div>
+          <div class="settings-row"><label>Show SELL signals</label><button class="toggle on" id="tog-sell" onclick="toggleSetting(this)"></button></div>
+          <div class="settings-row"><label>Show WATCH signals</label><button class="toggle on" id="tog-watch" onclick="toggleSetting(this)"></button></div>
+          <div class="settings-row">
+            <label>Min signal score</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <input type="range" min="1" max="5" value="1" id="minScore" oninput="document.getElementById('scoreV').textContent=this.value+'/5';rerenderScanResults()">
+              <span class="sv" id="scoreV">1/5</span>
+            </div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>About</h3>
+          <div class="settings-row"><span style="color:var(--text2)">Version</span><span style="font-family:var(--mono);font-size:12px">CSE Auto-Invest v5.0</span></div>
+          <div class="settings-row"><span style="color:var(--text2)">Market</span><span style="font-family:var(--mono);font-size:12px">Colombo Stock Exchange</span></div>
+          <div class="settings-row"><span style="color:var(--text2)">Fees</span><span style="font-family:var(--mono);font-size:12px">Sampath Securities 0.66%/side</span></div>
+          <div class="settings-row"><span style="color:var(--text2)">Proxy</span><span style="font-family:var(--mono);font-size:12px" id="proxy-status">Checking…</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ADD POSITION MODAL -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAddModal()">×</button>
+    <h2>Add Position</h2>
+    <div class="modal-sub">Record a stock you have bought</div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px">
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">Symbol</label>
+        <input id="add-symbol" type="text" placeholder="e.g. JKH.N0000" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">Shares Bought</label>
+        <input id="add-shares" type="number" placeholder="e.g. 100" min="1" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;"/>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:5px">Buy Price (LKR per share)</label>
+        <input id="add-price" type="number" placeholder="e.g. 160.50" min="0.01" step="0.01" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;"/>
+      </div>
+      <div id="add-error" style="color:var(--red);font-size:12px;display:none"></div>
+    </div>
+    <button class="modal-btn" onclick="savePosition()">Add to Portfolio</button>
+  </div>
+</div>
+
+<!-- STOCK DETAIL MODAL -->
+<div class="modal-overlay" id="stockModal" data-symbol="">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h2 id="modalTitle">Stock Details</h2>
+    <div class="modal-sub" id="modalSub">Colombo Stock Exchange</div>
+    <div id="modalBody"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="modal-btn" id="modalAutoBtn" onclick="autoInvestFromModal()" style="background:var(--green);color:#0b0e13">⚡ Auto-Invest</button>
+      <button class="modal-btn" onclick="closeModal()" style="background:var(--surface3)">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTO-SELL CONFIRM MODAL -->
+<div class="modal-overlay" id="sellModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSellModal()">×</button>
+    <h2 id="sellModalTitle">Sell Position</h2>
+    <div class="modal-sub" id="sellModalSub"></div>
+    <div id="sellModalBody"></div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="modal-btn" id="sellConfirmBtn" onclick="confirmSell()" style="background:var(--red);color:#fff">Confirm Sell</button>
+      <button class="modal-btn" onclick="closeSellModal()" style="background:var(--surface3)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="Script.js" defer></script>
+</body>
+</html>
